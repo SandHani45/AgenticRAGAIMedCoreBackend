@@ -9,6 +9,10 @@ import { createServer } from "http";
 import agentRoutes from "./routes/agentRoutes";
 export function registerApiRoutes(app: Express) {
   const httpServer = createServer(app);
+  // Healthcheck endpoint
+  app.get("/api/healthcheck", (req, res) => {
+    res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+  });
   app.use("/api", authRoutes);
   app.use("/api", dashboardRoutes);
   app.use("/api", sessionRoutes);
