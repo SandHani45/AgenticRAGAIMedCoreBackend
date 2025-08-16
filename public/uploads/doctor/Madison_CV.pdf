@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://static.readdy.ai/web/favicon-180.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="https://static.readdy.ai/web/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="https://static.readdy.ai/web/favicon-16.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Readdy</title>
+    <script>
+      (function (w, r) {
+        w._rwq = r;
+        w[r] =
+          w[r] ||
+          function () {
+            (w[r].q = w[r].q || []).push(arguments);
+          };
+      })(window, 'rewardful');
+    </script>
+    <script async src="https://r.wdfl.co/rw.js" data-rewardful="e9859a"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-FB0NP1MM86"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+
+      gtag('config', 'G-FB0NP1MM86')
+    </script>
+
+    <script>
+      function setRootFontSize() {
+        const baseSize = 14; // 基础字体大小
+        const scaleFactor = window.innerWidth / 393;
+        document.documentElement.style.fontSize = `${baseSize * scaleFactor}px`;
+      }
+
+      // window.addEventListener('resize', setRootFontSize);
+      // setRootFontSize();
+    </script>
+    <script>
+      // 预加载
+      try {
+        const READDY_PRELOAD = {};
+        READDY_PRELOAD['toggles'] = fetch('/api/public/toggles', {
+          method: 'GET'
+        }).then((res) => res.json());
+        window.READDY_PRELOAD = READDY_PRELOAD;
+      } catch (error) {
+        console.error('Preload proxy error:', error);
+      }
+    </script>
+    <script type="module" crossorigin src="https://static.readdy.ai/static/index-CU4EXX_D.js"></script>
+    <link rel="stylesheet" crossorigin href="https://static.readdy.ai/static/index-DuTCo7jI.css">
+  </head>
+  <body>
+    <div outline="0" id="app"></div>
+  </body>
+</html>
