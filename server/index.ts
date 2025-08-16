@@ -1,6 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerApiRoutes } from "./api";
-import { setupVite, serveStatic, log } from "./vite";
 import cors from "cors";
 import { connectMongoDB } from "./mongodb";
 
@@ -41,7 +40,6 @@ app.use((req, res, next) => {
       if (logLine.length > 80) {
         logLine = logLine.slice(0, 79) + "…";
       }
-      log(logLine);
     }
   });
   next();
@@ -62,18 +60,16 @@ connectMongoDB()
         throw err;
       });
 
-      if (app.get("env") === "development") {
-        await setupVite(app, server);
-      } else {
-        serveStatic(app);
-      }
+    
 
       const port = parseInt(process.env.PORT || '5000', 10);
       server.listen({
         port,
         host: "127.0.0.1",
       }, () => {
-        log(`serving on port ${port}`);
+        const addressInfo = server.address();
+        const host = typeof addressInfo === "object" && addressInfo ? addressInfo.address : "unknown";
+        console.log(`serving on host ${host} and port ${port}`);
       });
     })();
   })
