@@ -1,12 +1,16 @@
 // Document API Controller
 // Handles document CRUD and AI extraction for MediConnect
-import { ADMIN_DOCUMENT_STORE_PATH, DOCUMENT_STORE_PATH } from "server/constant/config";
+import {
+  ADMIN_DOCUMENT_STORE_PATH,
+  DOCUMENT_STORE_PATH,
+} from "server/constant/config";
 import { DocumentModel } from "../models/document";
 import { Response, Request } from "express";
 import { setupRagPipeline } from "./agentController";
 import { pdfToText } from "../util/pdfToText";
 import { AdminDocumentModel } from "../models/adminDocument";
-import { IntialTriage } from "server/prompt/intialTrage";
+import dotenv from "dotenv";
+dotenv.config();
 
 /**
  * GET /documents/:type
@@ -78,9 +82,58 @@ export async function uploadDocument(req: Request, res: Response) {
 
     await newDocument.save();
     const appAPI = await setupRagPipeline();
-    const queryText = pdfText
-    const customPrompt = `${IntialTriage} ${queryText}`;
-    let data = await appAPI.query(customPrompt);
+    const queryText = pdfText;
+
+    const ragPrompt = `
+You are an intelligent assistant that provides precise answers using a knowledge base. 
+
+Rules:
+1. The user will provide a query.
+2. Use the context documents retrieved from a vector database to answer the query.
+3. Return only factual information based on the retrieved documents.
+4. Include **source information**: list the document titles, URLs, or IDs used for each part of the answer.
+5. Avoid adding information that is not present in the retrieved documents.
+6. Format the output strictly in JSON as below:
+
+{
+  "answer": "<Provide the concise and accurate answer here based on retrieved documents>",
+  "sources": [
+    {
+      "title": "<Document title or ID>",
+      "url": "<Document URL if available>",
+      "page_number": "<Page number or section if available>"
+    },
+    ...
+  ]
+}
+
+Instructions:
+- If the retrieved documents do not contain an answer, return:
+{
+  "answer": "Sorry, the answer is not available in the provided documents.",
+  "sources": []
+}
+- Do not include any text outside the JSON structure.
+- Always prioritize accuracy and clarity.
+- Combine information from multiple sources only when it is consistent and relevant.
+- Avoid hallucinations or unsupported assumptions.
+
+User Query:
+${queryText}
+`;
+console.log("LLM Base URL:", process.env.LLM_API_BASE_URL);
+    // Call LLM API
+    const llmResponse = await fetch(`${process.env.LLM_API_BASE_URL}/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: queryText }),
+    });
+    console.log("LLM API response:", llmResponse);
+    if (!llmResponse.ok) {
+      throw new Error(`LLM API error: ${llmResponse.statusText}`);
+    }
+
+    const data = await llmResponse.json();
 
     res.status(201).json({
       success: true,
@@ -92,7 +145,6 @@ export async function uploadDocument(req: Request, res: Response) {
     res.status(500).json({ message: "Failed to upload document" });
   }
 }
-
 
 /**
  * POST /documents/admin-upload
@@ -177,5 +229,3 @@ export async function getDocumentDetail(req: Request, res: Response) {
     res.status(500).json({ message: "Failed to fetch document detail" });
   }
 }
-
-

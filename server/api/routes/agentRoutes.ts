@@ -1,7 +1,7 @@
 
 import { Router } from "express";
 import passport from "passport";
-import { askMe } from "../controllers/agentController";
+import { askMe, getEDPoints } from "../controllers/agentController";
 import { getUser } from "../controllers/authController";
 
 const router = Router();
@@ -16,5 +16,6 @@ const router = Router();
  * Returns: { answer: string }
  */
 router.post("/agent/askMe", passport.authenticate("jwt", { session: false }), askMe);
+router.post("/agent/edPoints", passport.authenticate("jwt", { session: false }), getEDPoints);
 
 export default router;

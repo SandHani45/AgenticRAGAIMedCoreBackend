@@ -8,12 +8,16 @@ import passport from "./passport/jwtStrategy";
 
 const app = express();
 app.use(passport.initialize());
+const allowedOrigins = [
+  process.env.CLIENT_URL || "http://localhost:5173",
+  "https://medcare-report-api.onrender.com"
+];
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: allowedOrigins,
   credentials: true,
 }));
 app.options("*", cors({
-  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  origin: allowedOrigins,
   credentials: true,
 }));
 app.use(express.json());
