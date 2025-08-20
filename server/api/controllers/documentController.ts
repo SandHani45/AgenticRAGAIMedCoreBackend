@@ -82,63 +82,74 @@ export async function uploadDocument(req: Request, res: Response) {
 
     await newDocument.save();
     const appAPI = await setupRagPipeline();
-    const queryText = pdfText;
+    const patient_data = pdfText;
 
     const ragPrompt = `
-You are an intelligent assistant that provides precise answers using a knowledge base. 
+You are a clinical AI assistant.  
+Your task is to analyze the provided patient data and the retrieved medical documents, then extract relevant structured information.  
 
 Rules:
-1. The user will provide a query.
-2. Use the context documents retrieved from a vector database to answer the query.
-3. Return only factual information based on the retrieved documents.
-4. Include **source information**: list the document titles, URLs, or IDs used for each part of the answer.
-5. Avoid adding information that is not present in the retrieved documents.
-6. Format the output strictly in JSON as below:
+- Always return the output strictly in JSON format (no explanations, no text outside JSON).  
+- Use the document context to match ICD-10 codes or terminology.  
+- If a field is not available, return it as an empty object '''{}'''.  
+- Do not hallucinate. Only use information present in the documents.  
+- Keys must follow the schema exactly: 
+  "Past medical history", "Social history", "Impression", "Diagnosis".  
 
+Context (retrieved from documents):
+{retrieved_documents}
+
+Patient Data:
+${patient_data}
+
+Output JSON:
 {
-  "answer": "<Provide the concise and accurate answer here based on retrieved documents>",
-  "sources": [
-    {
-      "title": "<Document title or ID>",
-      "url": "<Document URL if available>",
-      "page_number": "<Page number or section if available>"
-    },
-    ...
-  ]
+  "Past medical history": {
+    "Hypertension": "I10",
+    "Type 2 Diabetes Mellitus": "E11.9"
+  },
+  "Social history": {
+    "Long term (current) use of anticoagulants": "Z79.01"
+  },
+  "Impression": {
+    "Unspecified atrial fibrillation": "I48.91"
+  },
+  "Diagnosis": {
+    "Chest pain, unspecified": "R07.9"
+  }
 }
-
-Instructions:
-- If the retrieved documents do not contain an answer, return:
-{
-  "answer": "Sorry, the answer is not available in the provided documents.",
-  "sources": []
-}
-- Do not include any text outside the JSON structure.
-- Always prioritize accuracy and clarity.
-- Combine information from multiple sources only when it is consistent and relevant.
-- Avoid hallucinations or unsupported assumptions.
-
-User Query:
-${queryText}
 `;
-console.log("LLM Base URL:", process.env.LLM_API_BASE_URL);
+    console.log("LLM Base URL:", process.env.LLM_API_BASE_URL);
     // Call LLM API
     const llmResponse = await fetch(`${process.env.LLM_API_BASE_URL}/query`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: queryText }),
+      body: JSON.stringify({ question: ragPrompt }),
     });
     console.log("LLM API response:", llmResponse);
     if (!llmResponse.ok) {
       throw new Error(`LLM API error: ${llmResponse.statusText}`);
     }
 
-    const data = await llmResponse.json();
-
+    let data = await llmResponse.json();
+    // If data.answer is a string, try to parse as JSON (handle code fences)
+    let parsedAnswer = data.answer;
+    if (typeof parsedAnswer === "string") {
+      try {
+        // Remove leading/trailing whitespace and code fences
+        const cleaned = parsedAnswer.trim().replace(/^```json\n?|```$/g, "");
+        parsedAnswer = JSON.parse(cleaned);
+      } catch (e) {
+        console.error("Failed to parse LLM response as JSON", parsedAnswer);
+      }
+    }
     res.status(201).json({
       success: true,
       message: "Document uploaded successfully",
-      data: data,
+      data: {
+        "documentData": parsedAnswer
+      },
+      sources: data.sources || [],
     });
   } catch (error) {
     console.error("Error uploading document:", error);

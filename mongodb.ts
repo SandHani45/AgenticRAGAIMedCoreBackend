@@ -4,7 +4,7 @@ let isConnected = false;
 
 export async function connectMongoDB(): Promise<boolean> {
   try {
-    const mongoUrl = process.env.MONGO_URL || process.env.MONGODB_URI;
+    const mongoUrl = process.env.MONGODB_URI;
     
     if (!mongoUrl) {
       console.log('🔄 No MongoDB URL provided, falling back to local storage');
